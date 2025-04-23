@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SonarSight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered insights from any webpage using Google Gemini and Perplexity APIs with your own API keys",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,7 +9,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup_new.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -22,10 +22,15 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
-  "permissions": ["contextMenus", "activeTab", "storage", "clipboard"],
+  "permissions": ["contextMenus", "activeTab", "storage", "clipboardWrite", "tabs", "scripting"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'"
+  },
   "host_permissions": [
     "http://localhost:5000/*",
     "https://api.perplexity.ai/*",
@@ -37,7 +42,7 @@
   "short_name": "SonarSight",
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "lib/fonts/*", "lib/fontawesome/*"],
       "matches": ["<all_urls>"]
     }
   ]

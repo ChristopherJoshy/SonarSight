@@ -1,3 +1,36 @@
+/* Inter font */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Inter Regular'), local('Inter-Regular'),
+       url('chrome-extension://__MSG_@@extension_id__/lib/fonts/Inter-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  src: local('Inter Medium'), local('Inter-Medium'),
+       url('chrome-extension://__MSG_@@extension_id__/lib/fonts/Inter-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Inter SemiBold'), local('Inter-SemiBold'),
+       url('chrome-extension://__MSG_@@extension_id__/lib/fonts/Inter-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Inter Bold'), local('Inter-Bold'),
+       url('chrome-extension://__MSG_@@extension_id__/lib/fonts/Inter-Bold.woff2') format('woff2');
+}
+
 :root {
   /* Black and white theme */
   --primary-50: #fafafa;
@@ -10,7 +43,7 @@
   --primary-700: #404040;
   --primary-800: #262626;
   --primary-900: #171717;
-  
+
   --secondary-50: #f5f5f5;
   --secondary-100: #e5e5e5;
   --secondary-200: #d4d4d4;
@@ -21,9 +54,9 @@
   --secondary-700: #262626;
   --secondary-800: #171717;
   --secondary-900: #0a0a0a;
-  
+
   --accent-500: #404040;
-  
+
   --gray-50: #fafafa;
   --gray-100: #f5f5f5;
   --gray-200: #e5e5e5;
@@ -34,10 +67,10 @@
   --gray-700: #404040;
   --gray-800: #262626;
   --gray-900: #171717;
-  
+
   --red-500: #525252;
   --green-400: #404040;
-  
+
   --border-radius: 0.25rem;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
@@ -52,7 +85,7 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--gray-800);
@@ -241,11 +274,11 @@ main {
 }
 
 /* Markdown styling */
-.ai-response h1, 
-.ai-response h2, 
-.ai-response h3, 
-.ai-response h4, 
-.ai-response h5, 
+.ai-response h1,
+.ai-response h2,
+.ai-response h3,
+.ai-response h4,
+.ai-response h5,
 .ai-response h6 {
   margin-top: 1.2rem;
   margin-bottom: 0.6rem;
@@ -273,13 +306,13 @@ main {
   font-size: 0.95rem;
 }
 
-.ai-response ul, 
+.ai-response ul,
 .ai-response ol {
   padding-left: 1.5rem;
   margin-bottom: 0.75rem;
 }
 
-.ai-response ul li, 
+.ai-response ul li,
 .ai-response ol li {
   margin-bottom: 0.25rem;
 }

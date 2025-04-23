@@ -1,0 +1,39 @@
+/* Minimal Font Awesome CSS for SonarSight */
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('fontawesome-webfont.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.fa, .fas {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Icon definitions */
+.fa-broadcast-tower:before { content: "\f519"; }
+.fa-cog:before { content: "\f013"; }
+.fa-question-circle:before { content: "\f059"; }
+.fa-quote-left:before { content: "\f10d"; }
+.fa-robot:before { content: "\f544"; }
+.fa-copy:before { content: "\f0c5"; }
+.fa-bookmark:before { content: "\f02e"; }
+.fa-chevron-down:before { content: "\f078"; }
+.fa-chevron-up:before { content: "\f077"; }
+.fa-comments:before { content: "\f086"; }
+.fa-paper-plane:before { content: "\f1d8"; }
+.fa-download:before { content: "\f019"; }
+.fa-sort:before { content: "\f0dc"; }
+.fa-history:before { content: "\f1da"; }
+.fa-check-circle:before { content: "\f058"; }
+.fa-times:before { content: "\f00d"; }
+.fa-eye:before { content: "\f06e"; }
+.fa-eye-slash:before { content: "\f070"; }
+.fa-edit:before { content: "\f044"; }
+.fa-trash-alt:before { content: "\f2ed"; }
+.fa-external-link-alt:before { content: "\f35d"; }

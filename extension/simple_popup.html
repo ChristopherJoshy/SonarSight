@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonarSight</title>
+  <style>
+    /* Basic styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      width: 400px;
+      min-height: 500px;
+    }
+
+    .header {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .settings-button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .content {
+      padding: 15px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .card-title {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .selected-text {
+      border-left: 3px solid #0066cc;
+      padding-left: 10px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .empty-text {
+      color: #666;
+      font-style: italic;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0066cc;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 2s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .results {
+      display: none;
+    }
+
+    .ai-response {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .ai-response h1 {
+      font-size: 18px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+
+    .ai-response h2 {
+      font-size: 16px;
+      margin-top: 15px;
+      margin-bottom: 8px;
+    }
+
+    .ai-response ul, .ai-response ol {
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .ai-response p {
+      margin-bottom: 10px;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background-color: #0055aa;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .secondary-button {
+      background-color: #f5f5f5;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+
+    .secondary-button:hover {
+      background-color: #e5e5e5;
+    }
+
+    .input-container {
+      margin-top: 15px;
+      display: flex;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .send-button {
+      margin-left: 5px;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .notification.error {
+      background-color: #f44336;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      margin-top: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-button {
+      padding: 5px 15px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      background: none;
+      color: rgba(255, 255, 255, 0.7);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-button:hover {
+      color: white;
+    }
+
+    .tab-button.active {
+      color: white;
+      border-bottom-color: white;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: block;
+    }
+
+    .tab-content.hidden {
+      display: none;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 15px 0;
+      text-align: center;
+    }
+
+    /* Saved Items */
+    .saved-item {
+      border-bottom: 1px solid #eee;
+      padding: 15px 0;
+      margin-bottom: 15px;
+    }
+
+    .saved-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .saved-item-title {
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .saved-item-date {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .saved-item-preview {
+      font-size: 14px;
+      margin-bottom: 10px;
+      max-height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .saved-item-preview::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+    }
+
+    .saved-item-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* History Items */
+    .history-item {
+      border-bottom: 1px solid #eee;
+      padding: 15px 0;
+    }
+
+    .history-timestamp {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .history-query {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .history-source {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .modal-body {
+      padding: 15px;
+    }
+
+    /* Settings */
+    .settings-section {
+      margin-bottom: 20px;
+    }
+
+    .settings-section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .provider-selection {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .api-key-container {
+      margin-bottom: 15px;
+    }
+
+    .api-key-container.hidden {
+      display: none;
+    }
+
+    .api-key-container label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .api-key-container input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+
+    .get-key-link {
+      font-size: 12px;
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    .settings-option-row {
+      margin-bottom: 15px;
+    }
+
+    .settings-option-row label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .settings-option-row input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .primary-button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .primary-button:hover {
+      background-color: #0055aa;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      <h1>SonarSight</h1>
+      <button id="openSettingsBtn" class="settings-button">⚙️</button>
+    </div>
+    <div class="tabs">
+      <button id="insightsTab" class="tab-button active">Insights</button>
+      <button id="notebookTab" class="tab-button">Notebook</button>
+      <button id="historyTab" class="tab-button">History</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Insights Tab Content -->
+    <div id="insightsContent" class="tab-content">
+      <!-- Selected Text Card -->
+      <div class="card">
+        <h2 class="card-title">Selected Text</h2>
+        <div id="selectedText" class="selected-text">
+          <p class="empty-text">No text selected. Highlight text on any webpage and use the context menu to analyze it.</p>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Analyzing with SonarSight AI...</p>
+      </div>
+
+      <!-- Results Card -->
+      <div id="resultsCard" class="card results">
+        <h2 class="card-title">AI Analysis</h2>
+        <div id="aiResponse" class="ai-response"></div>
+
+        <div class="button-row">
+          <button id="copyBtn" class="secondary-button">Copy</button>
+          <button id="saveBtn">Save</button>
+        </div>
+      </div>
+
+      <!-- Follow-up Question -->
+      <div class="card">
+        <h2 class="card-title">Ask a follow-up question</h2>
+        <div class="input-container">
+          <input type="text" id="followUpInput" placeholder="What else would you like to know?">
+          <button id="sendBtn" class="send-button" disabled>Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notebook Tab Content -->
+    <div id="notebookContent" class="tab-content hidden">
+      <div class="card">
+        <h2 class="card-title">Saved Insights</h2>
+        <div class="button-row">
+          <button id="exportBtn" class="secondary-button">Export All</button>
+        </div>
+
+        <!-- No Saved Items State -->
+        <div id="noSavedItems" class="empty-state">
+          <p class="empty-text">No saved insights yet. When you save an analysis, it will appear here.</p>
+        </div>
+
+        <!-- Saved Items List -->
+        <div id="savedItemsList"></div>
+      </div>
+    </div>
+
+    <!-- History Tab Content -->
+    <div id="historyContent" class="tab-content hidden">
+      <div class="card">
+        <h2 class="card-title">Recent Queries</h2>
+
+        <!-- No History State -->
+        <div id="noHistoryItems" class="empty-state">
+          <p class="empty-text">No history yet. Your query history will appear here as you analyze content.</p>
+        </div>
+
+        <!-- History Timeline -->
+        <div id="historyTimeline"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button id="closeSettingsBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h3>API Provider</h3>
+          <div class="provider-selection">
+            <label>
+              <input type="radio" name="apiProvider" value="gemini" checked>
+              Google Gemini
+            </label>
+            <label>
+              <input type="radio" name="apiProvider" value="perplexity">
+              Perplexity
+            </label>
+          </div>
+
+          <div id="geminiApiContainer" class="api-key-container">
+            <label for="geminiApiKey">Gemini API Key</label>
+            <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API key">
+            <a href="https://ai.google.dev/" target="_blank" class="get-key-link">Get a key</a>
+          </div>
+
+          <div id="perplexityApiContainer" class="api-key-container hidden">
+            <label for="perplexityApiKey">Perplexity API Key</label>
+            <input type="password" id="perplexityApiKey" placeholder="Enter your Perplexity API key">
+            <a href="https://docs.perplexity.ai/" target="_blank" class="get-key-link">Get a key</a>
+          </div>
+
+          <div class="settings-option-row">
+            <label for="backendUrl">Backend URL</label>
+            <input type="text" id="backendUrl" placeholder="http://localhost:5000/api/query">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="saveSettingsBtn" class="primary-button">Save Settings</button>
+          <button id="resetSettingsBtn" class="secondary-button">Reset to Defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification">
+    <span id="notificationText"></span>
+  </div>
+
+  <!-- Include the mock server script -->
+  <script src="mock_server.js"></script>
+
+  <!-- Include the main script -->
+  <script src="simple_popup.js"></script>
+</body>
+</html>

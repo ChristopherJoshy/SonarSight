@@ -162,9 +162,53 @@ const suggestionCategories = {
   ]
 };
 
+// Track the last text we checked to avoid duplicate processing
+let lastCheckedText = '';
+
+// Function to check for text selection in the active tab
+function checkForTextSelection() {
+  debugLog('Checking for text selection in active tab');
+
+  // ONLY check local storage for a selection - no message passing
+  chrome.storage.local.get(['selectedText'], (data) => {
+    debugLog('Retrieved data from storage', {
+      hasSelection: !!data.selectedText,
+      textLength: data.selectedText ? data.selectedText.length : 0
+    });
+
+    if (data.selectedText && data.selectedText.trim() !== '') {
+      debugLog('Found selection in storage', { textLength: data.selectedText.length });
+
+      // Always update the UI with the stored selection
+      currentSelectedText = data.selectedText;
+      displaySelectedText(data.selectedText);
+
+      // Generate initial suggestion chips
+      generateSuggestionChips(data.selectedText);
+
+      // Auto-analyze the text (only if we don't already have a response and analysis isn't in progress)
+      if (!currentResponse && !analysisInProgress) {
+        analyzeText(data.selectedText);
+      }
+
+      // Clear the badge
+      chrome.action.setBadgeText({ text: '' });
+    } else {
+      // If no selection in storage, display empty state
+      debugLog('No selection found in storage, showing empty state');
+      displaySelectedText(''); // Show empty state
+    }
+  });
+}
+
+// We no longer try to inject the content script
+// Instead, we rely on the content script being loaded via the manifest
+
 // Initialize the extension
 document.addEventListener('DOMContentLoaded', () => {
   debugLog('Extension initialized');
+
+  // We no longer connect to the background script to avoid connection errors
 
   // Load settings first
   loadSettings().then(() => {
@@ -177,51 +221,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize settings UI with the loaded values
     initializeSettingsUI();
 
-    // Load selected text if available
-    chrome.storage.local.get(['selectedText', 'selectionSource'], (data) => {
-      debugLog('Retrieved stored text from Chrome storage', {
-        hasText: !!data.selectedText,
-        textLength: data.selectedText ? data.selectedText.length : 0,
-        source: data.selectionSource
-      });
-
-      if (data.selectedText) {
-        currentSelectedText = data.selectedText;
-        displaySelectedText(data.selectedText);
-
-        // Generate initial suggestion chips even before analysis is complete
-        generateSuggestionChips(data.selectedText);
-
-        // Clear the badge
-        chrome.action.setBadgeText({ text: '' });
-        debugLog('Badge text cleared');
-
-        // Auto-analyze the text
-        analyzeText(data.selectedText);
-      } else {
-        debugLog('No selected text found in storage');
-      }
-    });
+    // Check for text selection immediately and again after a short delay
+    checkForTextSelection();
+    setTimeout(checkForTextSelection, 500);
 
     // Set up event listeners
     setupEventListeners();
     debugLog('Event listeners set up');
+
+    // Set up polling for text selection (less frequent to avoid duplicate analyses)
+    setInterval(checkForTextSelection, 3000); // Check every 3 seconds
+
+    // Also check when the window gets focus
+    window.addEventListener('focus', checkForTextSelection);
   });
 });
 
-// Clear current request when window closes
-window.addEventListener('unload', () => {
-  debugLog('Extension window closing, clearing current request');
-
-  // Clear the selected text from storage
-  chrome.storage.local.remove(['selectedText', 'selectionSource'], () => {
-    debugLog('Selected text cleared from storage');
-  });
-
-  // Reset state variables
-  currentSelectedText = '';
-  currentResponse = null;
-});
+// We no longer need to handle the unload event
 
 // Setup event listeners
 function setupEventListeners() {
@@ -250,9 +266,23 @@ function setupEventListeners() {
   document.querySelector('.suggestion-chips').addEventListener('click', (e) => {
     const chip = e.target.closest('.suggestion-chip');
     if (chip) {
+      // Add animation to the clicked chip
+      chip.classList.add('clicked');
+
+      // Set the query in the input field
       followUpInput.value = chip.dataset.query;
       sendBtn.disabled = false;
       debugLog('Suggestion chip clicked', { query: chip.dataset.query });
+
+      // Remove the animation after a delay
+      setTimeout(() => {
+        chip.classList.remove('clicked');
+
+        // Auto-send the query after a short delay
+        setTimeout(() => {
+          handleSendQuery();
+        }, 300);
+      }, 300);
     }
   });
   debugLog('Suggestion chips delegation listener added');
@@ -369,11 +399,36 @@ function displaySelectedText(text) {
   });
 
   if (!text || text.trim() === '') {
-    selectedTextElement.innerHTML = `<p class="empty-text">No text selected. Highlight text on any webpage and use the context menu to analyze it.</p>`;
+    selectedTextElement.innerHTML = `
+      <p class="empty-text">No text selected. Highlight text on any webpage and use the context menu to analyze it.</p>
+      <p class="empty-text">The extension will automatically check for selected text every few seconds.</p>
+    `;
+
     debugLog('Empty text state displayed');
+
+    // Disable the send button if we have no text
+    if (sendBtn) {
+      sendBtn.disabled = true;
+    }
   } else {
-    selectedTextElement.innerHTML = `<p>${text}</p>`;
-    debugLog('Selected text displayed');
+    // Ensure the text is properly escaped to prevent HTML injection
+    const escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    selectedTextElement.innerHTML = `<p>${escapedText}</p>`;
+    debugLog('Selected text displayed successfully', { textLength: text.length });
+
+    // Enable the send button if we have text
+    if (sendBtn) {
+      sendBtn.disabled = false;
+    }
+
+    // Show a subtle notification
+    showNotification('Text selection loaded', 'success');
   }
 }
 
@@ -387,9 +442,29 @@ function handleSendQuery() {
     return;
   }
 
-  analyzeText(currentSelectedText, query);
-  followUpInput.value = '';
+  if (!currentSelectedText) {
+    debugLog('No selected text available for follow-up');
+    showNotification('Please select text first', 'error');
+    return;
+  }
+
+  // Add animation to the send button
+  sendBtn.classList.add('sending');
+
+  // Disable the button during processing
   sendBtn.disabled = true;
+
+  // Process the query
+  analyzeText(currentSelectedText, query);
+
+  // Clear the input
+  followUpInput.value = '';
+
+  // Remove the animation after a delay
+  setTimeout(() => {
+    sendBtn.classList.remove('sending');
+  }, 1000);
+
   debugLog('Query sent, input cleared');
 }
 
@@ -401,12 +476,14 @@ function toggleCitationsView() {
   if (isCitationsOpen) {
     citationsList.classList.add('open');
     citationsLabel.textContent = 'Hide citations';
-    toggleCitations.querySelector('i').classList.replace('fa-chevron-down', 'fa-chevron-up');
+    // Update the toggle button text/icon
+    toggleCitations.innerHTML = `<span id="citationsLabel">Hide citations</span> ⬆️`;
     debugLog('Citations expanded');
   } else {
     citationsList.classList.remove('open');
     citationsLabel.textContent = `Show ${currentResponse?.citations?.length || 0} citations`;
-    toggleCitations.querySelector('i').classList.replace('fa-chevron-up', 'fa-chevron-down');
+    // Update the toggle button text/icon
+    toggleCitations.innerHTML = `<span id="citationsLabel">Show ${currentResponse?.citations?.length || 0} citations</span> ⬇️`;
     debugLog('Citations collapsed');
   }
 }
@@ -420,16 +497,50 @@ function copyResponseToClipboard() {
 
   debugLog('Attempting to copy response to clipboard', { contentLength: currentResponse.content.length });
 
-  navigator.clipboard.writeText(currentResponse.content)
-    .then(() => {
-      debugLog('Content copied to clipboard successfully');
+  // Use the modern Clipboard API if available
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(currentResponse.content)
+      .then(() => {
+        debugLog('Content copied to clipboard successfully using Clipboard API');
+        showNotification('Copied to clipboard');
+      })
+      .catch(err => {
+        debugLog('Error copying to clipboard with Clipboard API', { error: err });
+        // Fall back to the older method
+        copyToClipboardFallback(currentResponse.content);
+      });
+  } else {
+    // Fall back to the older method for browsers that don't support Clipboard API
+    copyToClipboardFallback(currentResponse.content);
+  }
+}
+
+// Fallback method for copying to clipboard
+function copyToClipboardFallback(text) {
+  // Create a temporary textarea element
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';  // Prevent scrolling to bottom
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    // Execute copy command (deprecated but still works as fallback)
+    const successful = document.execCommand('copy');
+    if (successful) {
+      debugLog('Content copied to clipboard successfully using execCommand fallback');
       showNotification('Copied to clipboard');
-    })
-    .catch(err => {
-      debugLog('Error copying to clipboard', { error: err.message });
-      console.error('Failed to copy text: ', err);
-      showNotification('Failed to copy', 'error');
-    });
+    } else {
+      throw new Error('Copy command failed');
+    }
+  } catch (err) {
+    debugLog('Error copying to clipboard', { error: err.message });
+    console.error('Failed to copy text: ', err);
+    showNotification('Failed to copy', 'error');
+  } finally {
+    // Clean up
+    document.body.removeChild(textarea);
+  }
 }
 
 // Generate dynamic suggestion chips based on content
@@ -481,8 +592,7 @@ function generateSuggestionChips(text, response = null) {
     });
   }
 
-  // Get the top 2 categories (excluding critique which is always included)
-  const critiqueCategoryScore = categoryScores.critique;
+  // Exclude critique category which is always included
   delete categoryScores.critique;
 
   const sortedCategories = Object.entries(categoryScores)
@@ -738,17 +848,44 @@ function resetSettings() {
   });
 }
 
+// Track if analysis is in progress
+let analysisInProgress = false;
+let lastAnalyzedText = '';
+
 // Analyze text
 function analyzeText(text, followUp = null) {
   debugLog('Starting text analysis', {
     textLength: text ? text.length : 0,
-    followUp: followUp
+    followUp: followUp,
+    analysisInProgress: analysisInProgress
   });
 
+  // Don't analyze if text is empty
   if (!text || text.trim() === '') {
     debugLog('Error: Empty text provided for analysis');
     return;
   }
+
+  // Don't analyze if analysis is already in progress
+  if (analysisInProgress) {
+    debugLog('Analysis already in progress, ignoring request');
+    showNotification('Analysis already in progress', 'info');
+    return;
+  }
+
+  // Don't analyze if this is the same text we just analyzed (unless it's a follow-up)
+  if (!followUp && text === lastAnalyzedText && currentResponse) {
+    debugLog('Same text already analyzed, showing existing results');
+    // Just make sure the results are visible
+    loadingState.classList.add('hidden');
+    resultsCard.classList.remove('hidden');
+    return;
+  }
+
+  // Set flag to indicate analysis is in progress
+  analysisInProgress = true;
+  // Remember this text for future checks
+  lastAnalyzedText = text;
 
   // Check if user has provided any API keys at all
   const hasGeminiKey = settings.geminiApiKey && settings.geminiApiKey.trim() !== '';
@@ -911,6 +1048,9 @@ function analyzeText(text, followUp = null) {
 
       addToHistory(historyItem);
       debugLog('Item added to history', { id: historyItem.id, query: historyItem.query });
+
+      // Reset the analysis in progress flag
+      analysisInProgress = false;
     })
     .catch(error => {
       debugLog('API request error', {
@@ -968,6 +1108,9 @@ function analyzeText(text, followUp = null) {
           });
         }
       }, 100);
+
+      // Reset the analysis in progress flag
+      analysisInProgress = false;
     });
 }
 
@@ -1031,34 +1174,22 @@ function exportNotebook() {
     items: savedItems.length
   });
 
-  // Create and download the file
-  try {
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const filename = `sonarsight-${new Date().toISOString().split('T')[0]}.md`;
-
-    debugLog('File blob created', {
-      size: blob.size,
-      type: blob.type,
-      filename
-    });
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    debugLog('Export file download initiated');
-    showNotification('Exported to Markdown file');
-  } catch (error) {
-    debugLog('Error during export', {
-      error: error.message,
-      stack: error.stack
-    });
-    showNotification('Error exporting notebook', 'error');
+  // Copy the content to clipboard instead of downloading
+  // Use the modern Clipboard API if available
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(content)
+      .then(() => {
+        debugLog('Notebook content copied to clipboard successfully using Clipboard API');
+        showNotification('Notebook content copied to clipboard. You can paste it into a text editor and save it.');
+      })
+      .catch(err => {
+        debugLog('Error copying notebook with Clipboard API', { error: err });
+        // Fall back to the older method
+        copyToClipboardFallback(content);
+      });
+  } else {
+    // Fall back to the older method for browsers that don't support Clipboard API
+    copyToClipboardFallback(content);
   }
 }
 
@@ -1106,11 +1237,8 @@ function updateNotebookView() {
         <div class="saved-item-header">
           <h3 class="saved-item-title">${item.title}</h3>
           <div class="saved-item-actions">
-            <button class="saved-item-action edit-action">
-              <i class="fas fa-edit"></i>
-            </button>
             <button class="saved-item-action delete-action">
-              <i class="fas fa-trash-alt"></i>
+              🗑️ Delete
             </button>
           </div>
         </div>
@@ -1121,8 +1249,7 @@ function updateNotebookView() {
 
         <div class="saved-item-footer">
           <div class="saved-item-citations">
-            <i class="fas fa-external-link-alt"></i>
-            <span>${item.citations.length} citations</span>
+            🔗 <span>${item.citations.length} citations</span>
           </div>
           <button class="saved-item-view">View full</button>
         </div>
@@ -1149,10 +1276,68 @@ function updateNotebookView() {
       const item = savedItems.find(s => s.id === id);
       if (item) {
         debugLog('Saved item view button clicked', { id });
-        // Display full item in a modal or expand the card
+        // Display full item in the insights tab
+        viewSavedItem(id);
       }
     });
   });
+}
+
+// View saved item
+function viewSavedItem(id) {
+  debugLog('Viewing saved item', { id });
+
+  const item = savedItems.find(item => item.id === id);
+  if (!item) {
+    debugLog('Item not found', { id });
+    return;
+  }
+
+  // Switch to insights tab
+  setActiveTab('insights');
+
+  // Display the item content
+  loadingState.classList.add('hidden');
+  resultsCard.classList.remove('hidden');
+
+  // Set current response
+  currentResponse = {
+    content: item.content,
+    citations: item.citations || []
+  };
+
+  // Display the response with markdown formatting
+  try {
+    // Configure marked options
+    marked.setOptions({
+      breaks: true,  // Adds <br> on single line breaks
+      gfm: true,     // GitHub Flavored Markdown
+      headerIds: false, // Don't add IDs to headers
+      sanitize: false // Allow HTML (sanitize: true would strip HTML)
+    });
+
+    // Convert markdown to HTML
+    const htmlContent = marked.parse(item.content);
+    aiResponse.innerHTML = htmlContent;
+    debugLog('Saved item content rendered with markdown');
+  } catch (error) {
+    // Fallback to plain text if marked fails
+    aiResponse.innerHTML = `<p>${item.content}</p>`;
+    debugLog('Markdown parsing failed for saved item, using plain text', { error: error.message });
+  }
+
+  // Handle citations
+  if (item.citations && item.citations.length > 0) {
+    updateCitations(item.citations);
+    citationsSection.classList.remove('hidden');
+    citationsLabel.textContent = `Show ${item.citations.length} citations`;
+    debugLog('Citations displayed for saved item', { count: item.citations.length });
+  } else {
+    citationsSection.classList.add('hidden');
+    debugLog('No citations for saved item');
+  }
+
+  showNotification('Viewing saved item');
 }
 
 // Update history view

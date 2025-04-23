@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonarSight Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>SonarSight Test Page</h1>
+  <p>This page is designed to test the SonarSight extension's text selection functionality.</p>
+
+  <div class="test-section">
+    <h2>Test Text</h2>
+    <p id="testText">This is a test paragraph that you can select to test the SonarSight extension. The extension should detect when this text is selected and allow you to analyze it. Try selecting this text and then clicking on the SonarSight extension icon.</p>
+    <button onclick="selectTestText()">Select Test Text</button>
+  </div>
+
+  <div id="status">
+    <h2>Status</h2>
+    <p id="statusText">Waiting for extension...</p>
+  </div>
+
+  <script>
+    // Function to select the test text
+    function selectTestText() {
+      const testText = document.getElementById('testText');
+      const range = document.createRange();
+      range.selectNodeContents(testText);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      document.getElementById('statusText').textContent = 'Text selected! Now click the SonarSight extension icon.';
+    }
+
+    // Listen for messages from the extension
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'sonarSightStatus') {
+        document.getElementById('statusText').textContent = event.data.message;
+      }
+    });
+  </script>
+</body>
+</html>

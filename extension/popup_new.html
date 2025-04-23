@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SonarSight</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="lib/fontawesome/fontawesome.css">
+  <link rel="stylesheet" href="styles_new.css">
   <script src="lib/marked.min.js"></script>
 </head>
 <body>
@@ -14,17 +13,13 @@
     <header class="header">
       <div class="header-content">
         <div class="logo">
-          <i class="fas fa-broadcast-tower logo-icon"></i>
+          <span class="logo-icon">S</span>
           <h1 class="logo-text">SonarSight</h1>
         </div>
 
         <div class="header-buttons">
-          <button id="settingsBtn" class="icon-button">
-            <i class="fas fa-cog"></i>
-          </button>
-          <button id="helpBtn" class="icon-button">
-            <i class="fas fa-question-circle"></i>
-          </button>
+          <button id="settingsBtn" class="icon-button">⚙️</button>
+          <button id="helpBtn" class="icon-button">❓</button>
         </div>
       </div>
 
@@ -58,7 +53,7 @@
         <!-- Selected Text Card -->
         <div class="card">
           <h2 class="card-title">
-            <i class="fas fa-quote-left icon-primary"></i>
+            <span class="icon-primary">📝</span>
             Selected Text
           </h2>
           <div id="selectedText" class="selected-text">
@@ -70,15 +65,15 @@
         <div id="resultsCard" class="card hidden">
           <div class="card-header">
             <h2 class="card-title">
-              <i class="fas fa-robot icon-primary"></i>
+              <span class="icon-primary">🤖</span>
               AI Analysis
             </h2>
             <div class="action-buttons">
               <button id="copyBtn" class="action-button">
-                <i class="fas fa-copy"></i> Copy
+                📋 Copy
               </button>
               <button id="saveBtn" class="action-button">
-                <i class="fas fa-bookmark"></i> Save
+                💾 Save
               </button>
             </div>
           </div>
@@ -88,8 +83,7 @@
           <!-- Citations Section -->
           <div id="citationsSection" class="citations-section hidden">
             <button id="toggleCitations" class="toggle-citations">
-              <i class="fas fa-chevron-down"></i>
-              <span id="citationsLabel">Show citations</span>
+              <span id="citationsLabel">Show citations</span> ⬇️
             </button>
 
             <div id="citationsList" class="citations-list"></div>
@@ -99,7 +93,7 @@
         <!-- Follow-up Question -->
         <div class="card">
           <h2 class="card-title">
-            <i class="fas fa-comments icon-primary"></i>
+            <span class="icon-primary">💬</span>
             Ask a follow-up question
           </h2>
 
@@ -110,9 +104,7 @@
               class="text-input"
               placeholder="What else would you like to know?"
             >
-            <button id="sendBtn" class="send-button" disabled>
-              <i class="fas fa-paper-plane"></i>
-            </button>
+            <button id="sendBtn" class="send-button" disabled>📤</button>
           </div>
 
           <div class="suggestion-chips">
@@ -135,19 +127,17 @@
           <h2 class="content-title">Saved Insights</h2>
           <div class="action-buttons">
             <button id="exportBtn" class="action-button">
-              <i class="fas fa-download"></i> Export
+              📥 Export
             </button>
             <button id="sortBtn" class="action-button">
-              <i class="fas fa-sort"></i> Sort
+              🔄 Sort
             </button>
           </div>
         </div>
 
         <!-- No Saved Items State -->
         <div id="noSavedItems" class="empty-state">
-          <div class="empty-icon">
-            <i class="fas fa-bookmark"></i>
-          </div>
+          <div class="empty-icon">📚</div>
           <h3 class="empty-title">No saved insights yet</h3>
           <p class="empty-description">When you save an analysis, it will appear here for easy reference.</p>
         </div>
@@ -162,9 +152,7 @@
 
         <!-- No History State -->
         <div id="noHistoryItems" class="empty-state">
-          <div class="empty-icon">
-            <i class="fas fa-history"></i>
-          </div>
+          <div class="empty-icon">🕒</div>
           <h3 class="empty-title">No history yet</h3>
           <p class="empty-description">Your query history will appear here as you analyze content.</p>
         </div>
@@ -182,7 +170,7 @@
 
     <!-- Notification -->
     <div id="notification" class="notification hidden">
-      <i class="fas fa-check-circle notification-icon"></i>
+      <span class="notification-icon">✅</span>
       <span id="notificationText" class="notification-text"></span>
     </div>
 
@@ -191,9 +179,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title">Settings</h2>
-          <button id="closeSettingsBtn" class="close-button">
-            <i class="fas fa-times"></i>
-          </button>
+          <button id="closeSettingsBtn" class="close-button">✖️</button>
         </div>
 
         <div class="modal-body">
@@ -232,14 +218,12 @@
               <label for="geminiApiKey" class="settings-label">Google Gemini API Key</label>
               <div class="key-input-container">
                 <input type="password" id="geminiApiKey" class="settings-input" placeholder="Enter your Gemini API key">
-                <button class="toggle-visibility-btn" data-for="geminiApiKey">
-                  <i class="fas fa-eye"></i>
-                </button>
+                <button class="toggle-visibility-btn" data-for="geminiApiKey">👁️</button>
               </div>
               <div class="settings-help">
                 <p>To get a Google Gemini API key:</p>
                 <ol>
-                  <li>Go to <a href="https://ai.google.dev/" target="_blank">Google AI Studio</a></li>
+                  <li>Go to Google AI Studio</li>
                   <li>Sign in or create a Google account</li>
                   <li>Create an API key in the API section</li>
                   <li>Copy and paste the key here</li>
@@ -251,14 +235,12 @@
               <label for="perplexityApiKey" class="settings-label">Perplexity API Key</label>
               <div class="key-input-container">
                 <input type="password" id="perplexityApiKey" class="settings-input" placeholder="Enter your Perplexity API key">
-                <button class="toggle-visibility-btn" data-for="perplexityApiKey">
-                  <i class="fas fa-eye"></i>
-                </button>
+                <button class="toggle-visibility-btn" data-for="perplexityApiKey">👁️</button>
               </div>
               <div class="settings-help">
                 <p>To get a Perplexity API key:</p>
                 <ol>
-                  <li>Go to <a href="https://docs.perplexity.ai/" target="_blank">Perplexity API</a></li>
+                  <li>Go to Perplexity API</li>
                   <li>Sign up for a Perplexity account</li>
                   <li>Navigate to API keys section</li>
                   <li>Create a new API key and paste it here</li>
@@ -366,9 +348,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title">Help & Information</h2>
-          <button id="closeHelpBtn" class="close-button">
-            <i class="fas fa-times"></i>
-          </button>
+          <button id="closeHelpBtn" class="close-button">✖️</button>
         </div>
 
         <div class="modal-body">
@@ -400,19 +380,8 @@
               <li>Clone or download the GitHub repository</li>
               <li>Install Node.js dependencies: <code>npm install</code></li>
               <li>Start the backend server: <code>npm run dev</code></li>
-              <li>Load the extension in Chrome:
-                <ul>
-                  <li>Open Chrome and go to <code>chrome://extensions</code></li>
-                  <li>Enable "Developer mode" in the top-right corner</li>
-                  <li>Click "Load unpacked" and select the extension folder</li>
-                </ul>
-              </li>
-              <li>Enter your API keys in the Settings menu:
-                <ul>
-                  <li>For Google Gemini: <a href="https://ai.google.dev/" target="_blank">Get key here</a></li>
-                  <li>For Perplexity: <a href="https://docs.perplexity.ai/" target="_blank">Get key here</a></li>
-                </ul>
-              </li>
+              <li>Load the extension in Chrome</li>
+              <li>Enter your API keys in the Settings menu</li>
               <li>Verify the backend URL in Settings (default: http://localhost:5000)</li>
             </ol>
           </div>
