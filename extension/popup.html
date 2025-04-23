@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonarSight</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-broadcast-tower logo-icon"></i>
+          <h1 class="logo-text">SonarSight</h1>
+        </div>
+        
+        <div class="header-buttons">
+          <button id="settingsBtn" class="icon-button">
+            <i class="fas fa-cog"></i>
+          </button>
+          <button id="helpBtn" class="icon-button">
+            <i class="fas fa-question-circle"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Tab Navigation -->
+      <nav class="tabs">
+        <button id="insightsTab" class="tab-button active">Insights</button>
+        <button id="notebookTab" class="tab-button">Notebook</button>
+        <button id="historyTab" class="tab-button">History</button>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="mainContent">
+      <!-- Loading Indicator (initially hidden) -->
+      <div id="loadingState" class="loading-container hidden">
+        <div class="loading-animation">
+          <div class="loading-dot"></div>
+          <div class="loading-text">Analyzing with SonarSight AI...</div>
+        </div>
+        
+        <div class="loading-skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line width-80"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line width-60"></div>
+        </div>
+      </div>
+
+      <!-- Insights Tab Content -->
+      <div id="insightsContent" class="tab-content">
+        <!-- Selected Text Card -->
+        <div class="card">
+          <h2 class="card-title">
+            <i class="fas fa-quote-left icon-primary"></i>
+            Selected Text
+          </h2>
+          <div id="selectedText" class="selected-text">
+            <p class="empty-text">No text selected. Highlight text on any webpage and use the context menu to analyze it.</p>
+          </div>
+        </div>
+
+        <!-- Results Card (initially hidden) -->
+        <div id="resultsCard" class="card hidden">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-robot icon-primary"></i>
+              AI Analysis
+            </h2>
+            <div class="action-buttons">
+              <button id="copyBtn" class="action-button">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+              <button id="saveBtn" class="action-button">
+                <i class="fas fa-bookmark"></i> Save
+              </button>
+            </div>
+          </div>
+          
+          <div id="aiResponse" class="ai-response"></div>
+          
+          <!-- Citations Section -->
+          <div id="citationsSection" class="citations-section hidden">
+            <button id="toggleCitations" class="toggle-citations">
+              <i class="fas fa-chevron-down"></i>
+              <span id="citationsLabel">Show citations</span>
+            </button>
+            
+            <div id="citationsList" class="citations-list"></div>
+          </div>
+        </div>
+
+        <!-- Follow-up Question -->
+        <div class="card">
+          <h2 class="card-title">
+            <i class="fas fa-comments icon-primary"></i>
+            Ask a follow-up question
+          </h2>
+          
+          <div class="input-container">
+            <input 
+              type="text" 
+              id="followUpInput"
+              class="text-input" 
+              placeholder="What else would you like to know?"
+            >
+            <button id="sendBtn" class="send-button" disabled>
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+          
+          <div class="suggestion-chips">
+            <button class="suggestion-chip" data-query="What are ethical concerns?">
+              What are ethical concerns?
+            </button>
+            <button class="suggestion-chip" data-query="Compare with older AI models">
+              Compare with older AI models
+            </button>
+            <button class="suggestion-chip" data-query="Future developments?">
+              Future developments?
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notebook Tab Content -->
+      <div id="notebookContent" class="tab-content hidden">
+        <div class="content-header">
+          <h2 class="content-title">Saved Insights</h2>
+          <div class="action-buttons">
+            <button id="exportBtn" class="action-button">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button id="sortBtn" class="action-button">
+              <i class="fas fa-sort"></i> Sort
+            </button>
+          </div>
+        </div>
+        
+        <!-- No Saved Items State -->
+        <div id="noSavedItems" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-bookmark"></i>
+          </div>
+          <h3 class="empty-title">No saved insights yet</h3>
+          <p class="empty-description">When you save an analysis, it will appear here for easy reference.</p>
+        </div>
+        
+        <!-- Saved Items List -->
+        <div id="savedItemsList" class="saved-items-list"></div>
+      </div>
+
+      <!-- History Tab Content -->
+      <div id="historyContent" class="tab-content hidden">
+        <h2 class="content-title">Recent Queries</h2>
+        
+        <!-- No History State -->
+        <div id="noHistoryItems" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-history"></i>
+          </div>
+          <h3 class="empty-title">No history yet</h3>
+          <p class="empty-description">Your query history will appear here as you analyze content.</p>
+        </div>
+        
+        <!-- History Timeline -->
+        <div id="historyTimeline" class="history-timeline"></div>
+        
+        <div id="loadMoreHistory" class="load-more hidden">
+          <button id="loadMoreBtn" class="load-more-button">
+            Load more history
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Notification -->
+    <div id="notification" class="notification hidden">
+      <i class="fas fa-check-circle notification-icon"></i>
+      <span id="notificationText" class="notification-text"></span>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Settings</h2>
+          <button id="closeSettingsBtn" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- API Provider Selection -->
+          <div class="settings-section">
+            <h3 class="settings-title">AI Model Provider</h3>
+            <div class="settings-description">Select which AI model provider to use for analysis.</div>
+            <div class="settings-options">
+              <label class="settings-option">
+                <input type="radio" name="apiProvider" value="gemini" checked>
+                <div class="option-content">
+                  <span class="option-name">Google Gemini</span>
+                  <span class="option-description">Uses Google Gemini AI model</span>
+                </div>
+              </label>
+              
+              <label class="settings-option">
+                <input type="radio" name="apiProvider" value="perplexity">
+                <div class="option-content">
+                  <span class="option-name">Perplexity</span>
+                  <span class="option-description">Uses Perplexity AI model</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          
+          <!-- API Key Settings -->
+          <div class="settings-section">
+            <h3 class="settings-title">API Keys</h3>
+            <div class="settings-description">
+              <p><strong>Important:</strong> This extension requires your own API key to work.</p>
+              <p>Your API key is stored securely on your device and is only used to make requests to the selected AI service.</p>
+            </div>
+            
+            <div id="geminiApiContainer" class="api-key-container">
+              <label for="geminiApiKey" class="settings-label">Google Gemini API Key</label>
+              <div class="key-input-container">
+                <input type="password" id="geminiApiKey" class="settings-input" placeholder="Enter your Gemini API key">
+                <button class="toggle-visibility-btn" data-for="geminiApiKey">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <div class="settings-help">
+                <p>To get a Google Gemini API key:</p>
+                <ol>
+                  <li>Go to <a href="https://ai.google.dev/" target="_blank">Google AI Studio</a></li>
+                  <li>Sign in or create a Google account</li>
+                  <li>Create an API key in the API section</li>
+                  <li>Copy and paste the key here</li>
+                </ol>
+              </div>
+            </div>
+            
+            <div id="perplexityApiContainer" class="api-key-container hidden">
+              <label for="perplexityApiKey" class="settings-label">Perplexity API Key</label>
+              <div class="key-input-container">
+                <input type="password" id="perplexityApiKey" class="settings-input" placeholder="Enter your Perplexity API key">
+                <button class="toggle-visibility-btn" data-for="perplexityApiKey">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <div class="settings-help">
+                <p>To get a Perplexity API key:</p>
+                <ol>
+                  <li>Go to <a href="https://docs.perplexity.ai/" target="_blank">Perplexity API</a></li>
+                  <li>Sign up for a Perplexity account</li>
+                  <li>Navigate to API keys section</li>
+                  <li>Create a new API key and paste it here</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customization Options -->
+          <div class="settings-section">
+            <h3 class="settings-title">Customization</h3>
+            
+            <!-- AI Model Settings -->
+            <div class="settings-subsection">
+              <h4 class="settings-subtitle">AI Model Settings</h4>
+              
+              <!-- Gemini Model Selection -->
+              <div id="geminiModelContainer" class="settings-option-row model-option">
+                <label for="geminiModel" class="settings-label">Gemini Model</label>
+                <select id="geminiModel" class="settings-select">
+                  <option value="gemini-1.5-pro" selected>Gemini 1.5 Pro</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                </select>
+              </div>
+              
+              <!-- Perplexity Model Selection -->
+              <div id="perplexityModelContainer" class="settings-option-row model-option">
+                <label for="perplexityModel" class="settings-label">Perplexity Model</label>
+                <select id="perplexityModel" class="settings-select">
+                  <option value="llama-3.1-sonar-small-128k-online" selected>Sonar Small (Llama 3.1)</option>
+                  <option value="llama-3.1-sonar-large-128k-online">Sonar Large (Llama 3.1)</option>
+                  <option value="llama-3.1-sonar-huge-128k-online">Sonar Huge (Llama 3.1)</option>
+                </select>
+              </div>
+              
+              <!-- Temperature -->
+              <div class="settings-option-row">
+                <label for="temperatureSlider" class="settings-label">Temperature: <span id="temperatureValue">0.3</span></label>
+                <input type="range" id="temperatureSlider" class="settings-slider" min="0" max="1" step="0.1" value="0.3">
+              </div>
+              
+              <!-- Max Tokens -->
+              <div class="settings-option-row">
+                <label for="maxTokens" class="settings-label">Max Tokens</label>
+                <select id="maxTokens" class="settings-select">
+                  <option value="512">512 tokens</option>
+                  <option value="1024" selected>1024 tokens</option>
+                  <option value="2048">2048 tokens</option>
+                  <option value="4096">4096 tokens</option>
+                </select>
+              </div>
+              
+              <!-- Enhanced Results Toggle -->
+              <div class="settings-option-row">
+                <label for="enhancedResultsToggle" class="settings-label">Enhanced Results</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="enhancedResultsToggle" class="toggle-input" checked>
+                  <label for="enhancedResultsToggle" class="toggle-label"></label>
+                </div>
+              </div>
+              <div class="settings-help">
+                <p>Enhanced results provide more detailed, well-structured responses with improved formatting and citations.</p>
+              </div>
+            </div>
+            
+            <!-- Application Settings -->
+            <div class="settings-subsection">
+              <h4 class="settings-subtitle">Application Settings</h4>
+              
+              <div class="settings-option-row">
+                <label for="debugModeToggle" class="settings-label">Debug Mode</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="debugModeToggle" class="toggle-input">
+                  <label for="debugModeToggle" class="toggle-label"></label>
+                </div>
+              </div>
+              
+              <div class="settings-option-row">
+                <label for="backendUrl" class="settings-label">Backend URL</label>
+                <input type="text" id="backendUrl" class="settings-input" placeholder="http://localhost:5000">
+              </div>
+              
+              <div class="settings-option-row">
+                <label for="maxHistoryItems" class="settings-label">History Items</label>
+                <select id="maxHistoryItems" class="settings-select">
+                  <option value="10">10 items</option>
+                  <option value="25">25 items</option>
+                  <option value="50" selected>50 items</option>
+                  <option value="100">100 items</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button id="resetSettingsBtn" class="secondary-button">Reset to Defaults</button>
+          <button id="saveSettingsBtn" class="primary-button">Save Settings</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Help & Information</h2>
+          <button id="closeHelpBtn" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="help-section">
+            <h3 class="help-title">Using SonarSight</h3>
+            <ol class="help-steps">
+              <li>Select text on any webpage</li>
+              <li>Click the SonarSight extension icon or use the context menu</li>
+              <li>The AI will analyze your selected text</li>
+              <li>Ask follow-up questions or save insights to your notebook</li>
+            </ol>
+          </div>
+          
+          <div class="help-section">
+            <h3 class="help-title">Features</h3>
+            <ul class="help-list">
+              <li><strong>AI Analysis:</strong> Get AI-powered insights about any text</li>
+              <li><strong>Citations:</strong> View sources referenced by the AI</li>
+              <li><strong>Notebook:</strong> Save important insights for later</li>
+              <li><strong>History:</strong> Review your previous queries</li>
+              <li><strong>Multiple AI Providers:</strong> Use either Google Gemini or Perplexity</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h3 class="help-title">Local Installation</h3>
+            <p>To run SonarSight locally on your PC:</p>
+            <ol class="help-steps">
+              <li>Clone or download the GitHub repository</li>
+              <li>Install Node.js dependencies: <code>npm install</code></li>
+              <li>Start the backend server: <code>npm run dev</code></li>
+              <li>Load the extension in Chrome:
+                <ul>
+                  <li>Open Chrome and go to <code>chrome://extensions</code></li>
+                  <li>Enable "Developer mode" in the top-right corner</li>
+                  <li>Click "Load unpacked" and select the extension folder</li>
+                </ul>
+              </li>
+              <li>Enter your API keys in the Settings menu:
+                <ul>
+                  <li>For Google Gemini: <a href="https://ai.google.dev/" target="_blank">Get key here</a></li>
+                  <li>For Perplexity: <a href="https://docs.perplexity.ai/" target="_blank">Get key here</a></li>
+                </ul>
+              </li>
+              <li>Verify the backend URL in Settings (default: http://localhost:5000)</li>
+            </ol>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <div class="app-version">SonarSight v1.0.0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
